@@ -26,11 +26,16 @@ class AlertNumbers extends State<AlertNumbersState> {
   static final List<int> numberList3 = [7, 8, 9];
 
   List<SizedBox> createButtons(List<int> numberList) {
+    // Calculate responsive button size with modern Material Design 3 spacing
+    final screenWidth = MediaQuery.of(context).size.width;
+    final buttonSize = ((screenWidth * 0.65) / 3) - 12; // 3 buttons per row with spacing
+    final fontSize = (screenWidth * 0.13).clamp(22.0, 32.0);
+    
     return <SizedBox>[
       for (int numbers in numberList)
         SizedBox(
-          width: 38,
-          height: 38,
+          width: buttonSize,
+          height: buttonSize,
           child: TextButton(
             onPressed: () => {
               setState(() {
@@ -40,24 +45,49 @@ class AlertNumbers extends State<AlertNumbersState> {
               })
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(
-                  Styles.secondaryBackgroundColor),
-              foregroundColor:
-                  MaterialStateProperty.all<Color>(Styles.primaryColor),
-              shape: MaterialStateProperty.all<OutlinedBorder>(
+              backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.hovered)) {
+                    return Styles.primaryColor.withValues(alpha: 0.1);
+                  }
+                  if (states.contains(WidgetState.pressed)) {
+                    return Styles.primaryColor.withValues(alpha: 0.2);
+                  }
+                  return Styles.secondaryBackgroundColor;
+                },
+              ),
+              foregroundColor: WidgetStateProperty.all<Color>(Styles.primaryColor),
+              shape: WidgetStateProperty.all<OutlinedBorder>(
                   RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(14),
               )),
-              side: MaterialStateProperty.all<BorderSide>(BorderSide(
-                color: Styles.foregroundColor,
-                width: 1,
+              side: WidgetStateProperty.all<BorderSide>(BorderSide(
+                color: Styles.foregroundColor.withValues(alpha: 0.3),
+                width: 1.5,
                 style: BorderStyle.solid,
               )),
+              elevation: WidgetStateProperty.resolveWith<double>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return 2.0;
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return 4.0;
+                  }
+                  return 1.0;
+                },
+              ),
+              shadowColor: WidgetStateProperty.all<Color>(
+                  Styles.primaryColor.withValues(alpha: 0.2)),
             ),
             child: Text(
               numbers.toString(),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18),
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+              ),
             ),
           ),
         )
@@ -82,19 +112,41 @@ class AlertNumbers extends State<AlertNumbersState> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Styles.secondaryBackgroundColor,
-        title: Center(
-            child: Text(
-          'Choose a Number',
-          style: TextStyle(color: Styles.foregroundColor),
-        )),
-        content: Column(
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 8,
+      backgroundColor: Styles.secondaryBackgroundColor,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 28.0),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: createRows(),
-        ));
+          children: [
+            Text(
+              'Choose a Number',
+              style: TextStyle(
+                color: Styles.foregroundColor,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: oneRow(numberList1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: oneRow(numberList2),
+                ),
+                oneRow(numberList3),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

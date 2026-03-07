@@ -4,12 +4,13 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animated_dialog/flutter_animated_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sudoku_solver_generator/sudoku_solver_generator.dart';
 
 import 'alerts/all.dart';
 import 'board_style.dart';
+import 'constants.dart';
+import 'dialog_helper.dart';
 import 'splash_screen_page.dart';
 import 'styles.dart';
 
@@ -24,12 +25,10 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  static const String versionNumber = '2.4.1';
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sudoku',
+      title: APP_TITLE,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Styles.primaryColor,
@@ -69,7 +68,8 @@ class HomePageState extends State<HomePage> {
           .toLowerCase();
     }
   }();
-  static bool isDesktop = ['windows', 'linux', 'macos'].contains(platform);
+  static bool isDesktop = [PLATFORM_WINDOWS, PLATFORM_LINUX, PLATFORM_MACOS]
+      .contains(platform);
 
   @override
   void initState() {
@@ -77,29 +77,30 @@ class HomePageState extends State<HomePage> {
     try {
       doWhenWindowReady(() {
         appWindow.alignment = Alignment.center;
-        appWindow.minSize = const Size(625, 625);
+        appWindow.minSize = const Size(WINDOW_MIN_SIZE, WINDOW_MIN_SIZE);
       });
-      // ignore: empty_catches
-    } on UnimplementedError {}
+    } on UnimplementedError catch (e) {
+      debugPrint('Window ready not supported on this platform: $e');
+    }
     getPrefs().whenComplete(() {
       if (currentDifficultyLevel == null) {
-        currentDifficultyLevel = 'easy';
-        setPrefs('currentDifficultyLevel');
+        currentDifficultyLevel = DEFAULT_DIFFICULTY;
+        setPrefs(PREF_DIFFICULTY_LEVEL);
       }
       if (currentTheme == null) {
         if (MediaQuery.maybeOf(context)?.platformBrightness != null) {
           currentTheme =
               MediaQuery.of(context).platformBrightness == Brightness.light
-                  ? 'light'
-                  : 'dark';
+                  ? THEME_LIGHT
+                  : THEME_DARK;
         } else {
-          currentTheme = 'dark';
+          currentTheme = DEFAULT_THEME;
         }
-        setPrefs('currentTheme');
+        setPrefs(PREF_THEME);
       }
       if (currentAccentColor == null) {
-        currentAccentColor = 'Blue';
-        setPrefs('currentAccentColor');
+        currentAccentColor = DEFAULT_ACCENT_COLOR;
+        setPrefs(PREF_ACCENT_COLOR);
       }
       newGame(currentDifficultyLevel!);
       changeTheme('set');
@@ -108,51 +109,52 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> getPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      currentDifficultyLevel = prefs.getString('currentDifficultyLevel');
-      currentTheme = prefs.getString('currentTheme');
-      currentAccentColor = prefs.getString('currentAccentColor');
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        currentDifficultyLevel = prefs.getString(PREF_DIFFICULTY_LEVEL);
+        currentTheme = prefs.getString(PREF_THEME);
+        currentAccentColor = prefs.getString(PREF_ACCENT_COLOR);
+      });
+    } catch (e) {
+      debugPrint('Error reading preferences: $e');
+    }
   }
 
-  setPrefs(String property) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (property == 'currentDifficultyLevel') {
-      prefs.setString('currentDifficultyLevel', currentDifficultyLevel!);
-    } else if (property == 'currentTheme') {
-      prefs.setString('currentTheme', currentTheme!);
-    } else if (property == 'currentAccentColor') {
-      prefs.setString('currentAccentColor', currentAccentColor!);
+  Future<void> setPrefs(String property) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (property == PREF_DIFFICULTY_LEVEL && currentDifficultyLevel != null) {
+        await prefs.setString(PREF_DIFFICULTY_LEVEL, currentDifficultyLevel!);
+      } else if (property == PREF_THEME && currentTheme != null) {
+        await prefs.setString(PREF_THEME, currentTheme!);
+      } else if (property == PREF_ACCENT_COLOR && currentAccentColor != null) {
+        await prefs.setString(PREF_ACCENT_COLOR, currentAccentColor!);
+      }
+    } catch (e) {
+      debugPrint('Error saving preference: $e');
     }
   }
 
   void changeTheme(String mode) {
     setState(() {
-      if (currentTheme == 'light') {
-        if (mode == 'switch') {
-          Styles.primaryBackgroundColor = Styles.darkGrey;
-          Styles.secondaryBackgroundColor = Styles.grey;
-          Styles.foregroundColor = Styles.white;
-          currentTheme = 'dark';
-        } else if (mode == 'set') {
-          Styles.primaryBackgroundColor = Styles.white;
-          Styles.secondaryBackgroundColor = Styles.white;
-          Styles.foregroundColor = Styles.darkGrey;
-        }
-      } else if (currentTheme == 'dark') {
-        if (mode == 'switch') {
-          Styles.primaryBackgroundColor = Styles.white;
-          Styles.secondaryBackgroundColor = Styles.white;
-          Styles.foregroundColor = Styles.darkGrey;
-          currentTheme = 'light';
-        } else if (mode == 'set') {
-          Styles.primaryBackgroundColor = Styles.darkGrey;
-          Styles.secondaryBackgroundColor = Styles.grey;
-          Styles.foregroundColor = Styles.white;
-        }
+      final isLightTheme = currentTheme == THEME_LIGHT;
+      final shouldSwitch = mode == 'switch';
+
+      if (shouldSwitch) {
+        currentTheme = isLightTheme ? THEME_DARK : THEME_LIGHT;
       }
-      setPrefs('currentTheme');
+
+      if (currentTheme == THEME_LIGHT) {
+        Styles.primaryBackgroundColor = Styles.white;
+        Styles.secondaryBackgroundColor = Styles.white;
+        Styles.foregroundColor = Styles.darkGrey;
+      } else {
+        Styles.primaryBackgroundColor = Styles.darkGrey;
+        Styles.secondaryBackgroundColor = Styles.grey;
+        Styles.foregroundColor = Styles.white;
+      }
+      setPrefs(PREF_THEME);
     });
   }
 
@@ -180,12 +182,11 @@ class HomePageState extends State<HomePage> {
       if (SudokuUtilities.isSolved(game)) {
         isButtonDisabled = !isButtonDisabled;
         gameOver = true;
-        Timer(const Duration(milliseconds: 500), () {
+        Timer(ANIMATION_DURATION_CHECK_RESULT, () {
           showAnimatedDialog<void>(
-              animationType: DialogTransitionType.fadeScale,
-              barrierDismissible: true,
-              duration: const Duration(milliseconds: 350),
               context: context,
+              barrierDismissible: true,
+              duration: ANIMATION_DURATION_LONG,
               builder: (_) => const AlertGameOver()).whenComplete(() {
             if (AlertGameOver.newGame) {
               newGame();
@@ -203,53 +204,68 @@ class HomePageState extends State<HomePage> {
   }
 
   static Future<List<List<List<int>>>> getNewGame(
-      [String difficulty = 'easy']) async {
+      [String difficulty = DEFAULT_DIFFICULTY]) async {
     int emptySquares;
     switch (difficulty) {
       case 'test':
-        {
-          emptySquares = 2;
-        }
+        emptySquares = TEST_EMPTY_SQUARES;
         break;
       case 'beginner':
-        {
-          emptySquares = 18;
-        }
+        emptySquares = BEGINNER_EMPTY_SQUARES;
         break;
       case 'easy':
-        {
-          emptySquares = 27;
-        }
+        emptySquares = EASY_EMPTY_SQUARES;
         break;
       case 'medium':
-        {
-          emptySquares = 36;
-        }
+        emptySquares = MEDIUM_EMPTY_SQUARES;
         break;
       case 'hard':
-        {
-          emptySquares = 54;
-        }
+        emptySquares = HARD_EMPTY_SQUARES;
+        break;
+      case 'expert':
+        emptySquares = EXPERT_EMPTY_SQUARES;
         break;
       default:
-        {
-          emptySquares = 2;
-        }
+        emptySquares = TEST_EMPTY_SQUARES;
         break;
     }
-    SudokuGenerator generator = SudokuGenerator(emptySquares: emptySquares);
-    return [generator.newSudoku, generator.newSudokuSolved];
+    
+    // Retry with fewer empty squares if puzzle generation fails
+    int maxRetries = 3;
+    int retryCount = 0;
+    int currentEmpty = emptySquares;
+    
+    while (retryCount < maxRetries) {
+      try {
+        SudokuGenerator generator = SudokuGenerator(emptySquares: currentEmpty);
+        return [generator.newSudoku, generator.newSudokuSolved];
+      } catch (e) {
+        debugPrint('Failed to generate puzzle with $currentEmpty empty squares: $e');
+        retryCount++;
+        currentEmpty = (currentEmpty - 2).clamp(MIN_EMPTY_SQUARES, emptySquares);
+        if (retryCount >= maxRetries) {
+          debugPrint('Could not generate valid puzzle after $maxRetries retries');
+          rethrow;
+        }
+      }
+    }
+    
+    throw Exception('Failed to generate valid Sudoku puzzle');
   }
 
   static List<List<int>> copyGrid(List<List<int>> grid) {
     return grid.map((row) => [...row]).toList();
   }
 
-  void setGame(int mode, [String difficulty = 'easy']) async {
+  Future<void> setGame(int mode, [String difficulty = 'easy']) async {
     if (mode == 1) {
-      game = List.filled(9, [0, 0, 0, 0, 0, 0, 0, 0, 0]);
-      gameCopy = List.filled(9, [0, 0, 0, 0, 0, 0, 0, 0, 0]);
-      gameSolved = List.filled(9, [0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      // Use List.generate to create independent rows - List.filled creates shallow copies
+      game = List<List<int>>.generate(
+          9, (_) => List<int>.filled(9, 0));
+      gameCopy = List<List<int>>.generate(
+          9, (_) => List<int>.filled(9, 0));
+      gameSolved = List<List<int>>.generate(
+          9, (_) => List<int>.filled(9, 0));
     } else {
       gameList = await getNewGame(difficulty);
       game = gameList[0];
@@ -271,9 +287,9 @@ class HomePageState extends State<HomePage> {
     setState(() {
       isFABDisabled = !isFABDisabled;
     });
-    Future.delayed(const Duration(milliseconds: 200), () {
+    Future.delayed(const Duration(milliseconds: 200), () async {
+      await setGame(2, difficulty);
       setState(() {
-        setGame(2, difficulty);
         isButtonDisabled =
             isButtonDisabled ? !isButtonDisabled : isButtonDisabled;
         gameOver = false;
@@ -291,65 +307,80 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  List<SizedBox> createButtons() {
+  List<Widget> createButtons() {
     if (firstRun) {
       setGame(1);
       firstRun = false;
     }
 
-    List<SizedBox> buttonList = List<SizedBox>.filled(9, const SizedBox());
+    List<Widget> buttonList = List<Widget>.filled(9, const SizedBox());
     for (var i = 0; i <= 8; i++) {
       var k = timesCalled;
-      buttonList[i] = SizedBox(
-        key: Key('grid-button-$k-$i'),
-        width: buttonSize(),
-        height: buttonSize(),
-        child: TextButton(
-          onPressed: isButtonDisabled || gameCopy[k][i] != 0
-              ? null
-              : () {
-                  showAnimatedDialog<void>(
-                          animationType: DialogTransitionType.fade,
-                          barrierDismissible: true,
-                          duration: const Duration(milliseconds: 300),
-                          context: context,
-                          builder: (_) => const AlertNumbersState())
-                      .whenComplete(() {
-                    callback([k, i], AlertNumbersState.number);
-                    AlertNumbersState.number = null;
-                  });
+      buttonList[i] = Padding(
+        padding: const EdgeInsets.all(0.6),
+        child: SizedBox(
+          key: Key('grid-button-$k-$i'),
+          width: buttonSize(),
+          height: buttonSize(),
+          child: TextButton(
+            onPressed: isButtonDisabled || gameCopy[k][i] != 0
+                ? null
+                : () {
+                    showAnimatedDialog<void>(
+                        context: context,
+                        barrierDismissible: true,
+                        duration: ANIMATION_DURATION_MEDIUM,
+                        builder: (_) => const AlertNumbersState())
+                        .whenComplete(() {
+                      callback([k, i], AlertNumbersState.number);
+                      AlertNumbersState.number = null;
+                    });
+                  },
+            onLongPress: isButtonDisabled || gameCopy[k][i] != 0
+                ? null
+                : () => callback([k, i], 0),
+            style: ButtonStyle(
+              backgroundColor:
+                  WidgetStateProperty.all<Color>(buttonColor(k, i)),
+              foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (Set<WidgetState> states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return gameCopy[k][i] == 0
+                      ? emptyColor(gameOver)
+                      : Styles.foregroundColor;
+                }
+                return game[k][i] == 0
+                    ? buttonColor(k, i)
+                    : Styles.secondaryColor;
+              }),
+              shape: WidgetStateProperty.all<OutlinedBorder>(
+                  RoundedRectangleBorder(
+                borderRadius: buttonEdgeRadius(k, i),
+              )),
+              side: WidgetStateProperty.all<BorderSide>(getGridBorder(k, i)),
+              elevation: WidgetStateProperty.resolveWith<double>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return 2.0;
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return 4.0;
+                  }
+                  return 1.0;
                 },
-          onLongPress: isButtonDisabled || gameCopy[k][i] != 0
-              ? null
-              : () => callback([k, i], 0),
-          style: ButtonStyle(
-            backgroundColor:
-                MaterialStateProperty.all<Color>(buttonColor(k, i)),
-            foregroundColor: MaterialStateProperty.resolveWith<Color>(
-                (Set<MaterialState> states) {
-              if (states.contains(MaterialState.disabled)) {
-                return gameCopy[k][i] == 0
-                    ? emptyColor(gameOver)
-                    : Styles.foregroundColor;
-              }
-              return game[k][i] == 0
-                  ? buttonColor(k, i)
-                  : Styles.secondaryColor;
-            }),
-            shape: MaterialStateProperty.all<OutlinedBorder>(
-                RoundedRectangleBorder(
-              borderRadius: buttonEdgeRadius(k, i),
-            )),
-            side: MaterialStateProperty.all<BorderSide>(BorderSide(
-              color: Styles.foregroundColor,
-              width: 1,
-              style: BorderStyle.solid,
-            )),
-          ),
-          child: Text(
-            game[k][i] != 0 ? game[k][i].toString() : ' ',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: buttonFontSize()),
+              ),
+              shadowColor: WidgetStateProperty.all<Color>(
+                  Styles.primaryColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              game[k][i] != 0 ? game[k][i].toString() : ' ',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: buttonFontSize(),
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
           ),
         ),
       );
@@ -436,22 +467,21 @@ class HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.pop(context);
                   Timer(
-                      const Duration(milliseconds: 300),
+                      ANIMATION_DURATION_MEDIUM,
                       () => showAnimatedDialog<void>(
-                              animationType: DialogTransitionType.fadeScale,
-                              barrierDismissible: true,
-                              duration: const Duration(milliseconds: 350),
-                              context: outerContext,
-                              builder: (_) => AlertDifficultyState(
-                                  currentDifficultyLevel!)).whenComplete(() {
+                          context: outerContext,
+                          barrierDismissible: true,
+                          duration: ANIMATION_DURATION_LONG,
+                          builder: (_) => AlertDifficultyState(
+                              currentDifficultyLevel!)).whenComplete(() {
                             if (AlertDifficultyState.difficulty != null) {
-                              Timer(const Duration(milliseconds: 300), () {
+                              Timer(ANIMATION_DURATION_MEDIUM, () {
                                 newGame(
-                                    AlertDifficultyState.difficulty ?? 'test');
+                                    AlertDifficultyState.difficulty ?? DEFAULT_DIFFICULTY);
                                 currentDifficultyLevel =
                                     AlertDifficultyState.difficulty;
                                 AlertDifficultyState.difficulty = null;
-                                setPrefs('currentDifficultyLevel');
+                                setPrefs(PREF_DIFFICULTY_LEVEL);
                               });
                             }
                           }));
@@ -477,20 +507,19 @@ class HomePageState extends State<HomePage> {
                   Timer(
                       const Duration(milliseconds: 200),
                       () => showAnimatedDialog<void>(
-                              animationType: DialogTransitionType.fadeScale,
-                              barrierDismissible: true,
-                              duration: const Duration(milliseconds: 350),
-                              context: outerContext,
-                              builder: (_) => AlertAccentColorsState(
-                                  currentAccentColor!)).whenComplete(() {
+                          context: outerContext,
+                          barrierDismissible: true,
+                          duration: ANIMATION_DURATION_LONG,
+                          builder: (_) => AlertAccentColorsState(
+                              currentAccentColor!)).whenComplete(() {
                             if (AlertAccentColorsState.accentColor != null) {
-                              Timer(const Duration(milliseconds: 300), () {
+                              Timer(ANIMATION_DURATION_MEDIUM, () {
                                 currentAccentColor =
                                     AlertAccentColorsState.accentColor;
                                 changeAccentColor(
-                                    currentAccentColor.toString());
+                                    currentAccentColor!);
                                 AlertAccentColorsState.accentColor = null;
-                                setPrefs('currentAccentColor');
+                                setPrefs(PREF_ACCENT_COLOR);
                               });
                             }
                           }));
@@ -503,12 +532,11 @@ class HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.pop(context);
                   Timer(
-                      const Duration(milliseconds: 200),
+                      ANIMATION_DURATION_SHORT,
                       () => showAnimatedDialog<void>(
-                          animationType: DialogTransitionType.fadeScale,
-                          barrierDismissible: true,
-                          duration: const Duration(milliseconds: 350),
                           context: outerContext,
+                          barrierDismissible: true,
+                          duration: ANIMATION_DURATION_LONG,
                           builder: (_) => const AlertAbout()));
                 },
               ),
@@ -519,19 +547,16 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-        onWillPop: () async {
-          if (kIsWeb) {
-            return false;
-          } else {
+    return PopScope(
+        canPop: kIsWeb ? false : true,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!kIsWeb && !didPop) {
             showAnimatedDialog<void>(
-                animationType: DialogTransitionType.fadeScale,
-                barrierDismissible: true,
-                duration: const Duration(milliseconds: 350),
                 context: context,
+                barrierDismissible: true,
+                duration: ANIMATION_DURATION_LONG,
                 builder: (_) => const AlertExit());
           }
-          return true;
         },
         child: Scaffold(
             backgroundColor: Styles.primaryBackgroundColor,
@@ -557,11 +582,9 @@ class HomePageState extends State<HomePage> {
                               padding: const EdgeInsets.fromLTRB(8, 8, 20, 8),
                               onPressed: () {
                                 showAnimatedDialog<void>(
-                                    animationType:
-                                        DialogTransitionType.fadeScale,
-                                    barrierDismissible: true,
-                                    duration: const Duration(milliseconds: 350),
                                     context: context,
+                                    barrierDismissible: true,
+                                    duration: ANIMATION_DURATION_LONG,
                                     builder: (_) => const AlertExit());
                               },
                             ),
@@ -574,10 +597,47 @@ class HomePageState extends State<HomePage> {
                         backgroundColor: Styles.primaryColor,
                       )),
             body: Builder(builder: (builder) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: createRows(),
+              return SingleChildScrollView(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Styles.primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: Styles.primaryColor.withValues(alpha: 0.1),
+                            blurRadius: 40,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          color: Styles.secondaryBackgroundColor,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: createRows(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               );
             }),

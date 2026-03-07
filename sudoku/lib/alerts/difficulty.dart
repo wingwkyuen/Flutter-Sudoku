@@ -29,7 +29,8 @@ class AlertDifficulty extends State<AlertDifficultyState> {
     'beginner',
     'easy',
     'medium',
-    'hard'
+    'hard',
+    'expert'
   ];
   String currentDifficultyLevel;
 

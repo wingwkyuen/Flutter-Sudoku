@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../constants.dart';
 import '../main.dart';
 import '../styles.dart';
 
@@ -26,7 +27,7 @@ class AlertExit extends StatelessWidget {
         TextButton(
           style: ButtonStyle(
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Styles.primaryColor)),
+                  WidgetStateProperty.all<Color>(Styles.primaryColor)),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -35,11 +36,11 @@ class AlertExit extends StatelessWidget {
         TextButton(
           style: ButtonStyle(
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Styles.primaryColor)),
+                  WidgetStateProperty.all<Color>(Styles.primaryColor)),
           onPressed: () {
             if (HomePageState.isDesktop) {
               exit(0);
-            } else if (HomePageState.platform == 'android') {
+            } else if (HomePageState.platform == PLATFORM_ANDROID) {
               SystemNavigator.pop();
             }
           },

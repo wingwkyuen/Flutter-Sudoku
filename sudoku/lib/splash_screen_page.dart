@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:splashscreen/splashscreen.dart';
 
+import 'constants.dart';
 import 'main.dart';
 import 'styles.dart';
 
@@ -20,10 +21,10 @@ class SplashScreenPageState extends State<SplashScreenPage> {
   @override
   Widget build(BuildContext context) {
     return SplashScreen(
-      seconds: 2,
+      seconds: ANIMATION_DURATION_SPLASH.inSeconds,
       navigateAfterSeconds: const HomePage(),
       title: Text(
-        '\nSudoku',
+        '\n$APP_TITLE',
         style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 25.0,
@@ -35,7 +36,7 @@ class SplashScreenPageState extends State<SplashScreenPage> {
       useLoader: true,
       loaderColor: Styles.primaryColor,
       loadingText: const Text(
-        'VarunS2002',
+        DEVELOPER_NAME,
         style: TextStyle(color: Colors.grey),
       ),
       loadingTextPadding: const EdgeInsets.only(top: 10.0),

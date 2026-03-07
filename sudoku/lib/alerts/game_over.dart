@@ -25,7 +25,7 @@ class AlertGameOver extends StatelessWidget {
         TextButton(
           style: ButtonStyle(
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Styles.primaryColor)),
+                  WidgetStateProperty.all<Color>(Styles.primaryColor)),
           onPressed: () {
             Navigator.pop(context);
             restartGame = true;
@@ -35,7 +35,7 @@ class AlertGameOver extends StatelessWidget {
         TextButton(
           style: ButtonStyle(
               foregroundColor:
-                  MaterialStateProperty.all<Color>(Styles.primaryColor)),
+                  WidgetStateProperty.all<Color>(Styles.primaryColor)),
           onPressed: () {
             Navigator.pop(context);
             newGame = true;

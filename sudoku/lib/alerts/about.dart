@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../constants.dart';
 import '../main.dart';
 import '../styles.dart';
 
@@ -75,7 +76,7 @@ class AlertAbout extends StatelessWidget {
               InkWell(
                 onTap: () => openURL(releasesURL),
                 child: Text(
-                  '${MyApp.versionNumber} ',
+                  '$APP_VERSION ',
                   style: TextStyle(
                       color: Styles.primaryColor,
                       fontFamily: 'roboto',
