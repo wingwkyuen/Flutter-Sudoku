@@ -51,6 +51,9 @@ class HomePageState extends State<HomePage> {
   int timesCalled = 0;
   bool isButtonDisabled = false;
   bool isFABDisabled = false;
+  int? selectedNumber;
+  Timer? gameTimer;
+  int elapsedSeconds = 0;
   late List<List<List<int>>> gameList;
   late List<List<int>> game;
   late List<List<int>> gameCopy;
@@ -68,8 +71,8 @@ class HomePageState extends State<HomePage> {
           .toLowerCase();
     }
   }();
-  static bool isDesktop = [PLATFORM_WINDOWS, PLATFORM_LINUX, PLATFORM_MACOS]
-      .contains(platform);
+  static bool isDesktop =
+      [PLATFORM_WINDOWS, PLATFORM_LINUX, PLATFORM_MACOS].contains(platform);
 
   @override
   void initState() {
@@ -106,6 +109,12 @@ class HomePageState extends State<HomePage> {
       changeTheme('set');
       changeAccentColor(currentAccentColor!, true);
     });
+  }
+
+  @override
+  void dispose() {
+    stopTimer();
+    super.dispose();
   }
 
   Future<void> getPrefs() async {
@@ -182,12 +191,15 @@ class HomePageState extends State<HomePage> {
       if (SudokuUtilities.isSolved(game)) {
         isButtonDisabled = !isButtonDisabled;
         gameOver = true;
+        stopTimer();
+        final completionTime = formatTime(elapsedSeconds);
         Timer(ANIMATION_DURATION_CHECK_RESULT, () {
           showAnimatedDialog<void>(
-              context: context,
-              barrierDismissible: true,
-              duration: ANIMATION_DURATION_LONG,
-              builder: (_) => const AlertGameOver()).whenComplete(() {
+                  context: context,
+                  barrierDismissible: true,
+                  duration: ANIMATION_DURATION_LONG,
+                  builder: (_) => AlertGameOver(timeString: completionTime))
+              .whenComplete(() {
             if (AlertGameOver.newGame) {
               newGame();
               AlertGameOver.newGame = false;
@@ -229,27 +241,30 @@ class HomePageState extends State<HomePage> {
         emptySquares = TEST_EMPTY_SQUARES;
         break;
     }
-    
+
     // Retry with fewer empty squares if puzzle generation fails
     int maxRetries = 3;
     int retryCount = 0;
     int currentEmpty = emptySquares;
-    
+
     while (retryCount < maxRetries) {
       try {
         SudokuGenerator generator = SudokuGenerator(emptySquares: currentEmpty);
         return [generator.newSudoku, generator.newSudokuSolved];
       } catch (e) {
-        debugPrint('Failed to generate puzzle with $currentEmpty empty squares: $e');
+        debugPrint(
+            'Failed to generate puzzle with $currentEmpty empty squares: $e');
         retryCount++;
-        currentEmpty = (currentEmpty - 2).clamp(MIN_EMPTY_SQUARES, emptySquares);
+        currentEmpty =
+            (currentEmpty - 2).clamp(MIN_EMPTY_SQUARES, emptySquares);
         if (retryCount >= maxRetries) {
-          debugPrint('Could not generate valid puzzle after $maxRetries retries');
+          debugPrint(
+              'Could not generate valid puzzle after $maxRetries retries');
           rethrow;
         }
       }
     }
-    
+
     throw Exception('Failed to generate valid Sudoku puzzle');
   }
 
@@ -260,12 +275,9 @@ class HomePageState extends State<HomePage> {
   Future<void> setGame(int mode, [String difficulty = 'easy']) async {
     if (mode == 1) {
       // Use List.generate to create independent rows - List.filled creates shallow copies
-      game = List<List<int>>.generate(
-          9, (_) => List<int>.filled(9, 0));
-      gameCopy = List<List<int>>.generate(
-          9, (_) => List<int>.filled(9, 0));
-      gameSolved = List<List<int>>.generate(
-          9, (_) => List<int>.filled(9, 0));
+      game = List<List<int>>.generate(9, (_) => List<int>.filled(9, 0));
+      gameCopy = List<List<int>>.generate(9, (_) => List<int>.filled(9, 0));
+      gameSolved = List<List<int>>.generate(9, (_) => List<int>.filled(9, 0));
     } else {
       gameList = await getNewGame(difficulty);
       game = gameList[0];
@@ -280,12 +292,15 @@ class HomePageState extends State<HomePage> {
       isButtonDisabled =
           !isButtonDisabled ? !isButtonDisabled : isButtonDisabled;
       gameOver = true;
+      selectedNumber = null;
     });
+    stopTimer();
   }
 
   void newGame([String difficulty = 'easy']) {
     setState(() {
       isFABDisabled = !isFABDisabled;
+      selectedNumber = null;
     });
     Future.delayed(const Duration(milliseconds: 200), () async {
       await setGame(2, difficulty);
@@ -295,6 +310,8 @@ class HomePageState extends State<HomePage> {
         gameOver = false;
         isFABDisabled = !isFABDisabled;
       });
+      resetTimer();
+      startTimer();
     });
   }
 
@@ -304,7 +321,40 @@ class HomePageState extends State<HomePage> {
       isButtonDisabled =
           isButtonDisabled ? !isButtonDisabled : isButtonDisabled;
       gameOver = false;
+      selectedNumber = null;
     });
+    resetTimer();
+    startTimer();
+  }
+
+  void startTimer() {
+    gameTimer?.cancel();
+    gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        elapsedSeconds++;
+      });
+    });
+  }
+
+  void stopTimer() {
+    gameTimer?.cancel();
+  }
+
+  void resetTimer() {
+    stopTimer();
+    setState(() {
+      elapsedSeconds = 0;
+    });
+  }
+
+  String formatTime(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int secs = seconds % 60;
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   List<Widget> createButtons() {
@@ -316,68 +366,78 @@ class HomePageState extends State<HomePage> {
     List<Widget> buttonList = List<Widget>.filled(9, const SizedBox());
     for (var i = 0; i <= 8; i++) {
       var k = timesCalled;
-      buttonList[i] = Padding(
-        padding: const EdgeInsets.all(0.6),
-        child: SizedBox(
-          key: Key('grid-button-$k-$i'),
-          width: buttonSize(),
-          height: buttonSize(),
-          child: TextButton(
-            onPressed: isButtonDisabled || gameCopy[k][i] != 0
-                ? null
-                : () {
+      buttonList[i] = Container(
+        key: Key('grid-button-$k-$i'),
+        width: buttonSize(),
+        height: buttonSize(),
+        decoration: BoxDecoration(
+          color: buttonColor(k, i, game, gameCopy, null, null, selectedNumber),
+          border: getGridBorder(k, i),
+        ),
+        child: TextButton(
+          onPressed: isButtonDisabled
+              ? null
+              : () {
+                  // If it's a clue cell, only highlight matching numbers
+                  if (gameCopy[k][i] != 0) {
+                    setState(() {
+                      selectedNumber =
+                          selectedNumber == game[k][i] ? null : game[k][i];
+                    });
+                  } else if (game[k][i] != 0) {
+                    // Cell has user-input number - allow both highlighting and editing
+                    // Show dialog to change the number
                     showAnimatedDialog<void>(
-                        context: context,
-                        barrierDismissible: true,
-                        duration: ANIMATION_DURATION_MEDIUM,
-                        builder: (_) => const AlertNumbersState())
+                            context: context,
+                            barrierDismissible: true,
+                            duration: ANIMATION_DURATION_MEDIUM,
+                            builder: (_) => const AlertNumbersState())
                         .whenComplete(() {
                       callback([k, i], AlertNumbersState.number);
                       AlertNumbersState.number = null;
                     });
-                  },
-            onLongPress: isButtonDisabled || gameCopy[k][i] != 0
-                ? null
-                : () => callback([k, i], 0),
-            style: ButtonStyle(
-              backgroundColor:
-                  WidgetStateProperty.all<Color>(buttonColor(k, i)),
-              foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                  (Set<WidgetState> states) {
-                if (states.contains(WidgetState.disabled)) {
-                  return gameCopy[k][i] == 0
-                      ? emptyColor(gameOver)
-                      : Styles.foregroundColor;
-                }
-                return game[k][i] == 0
-                    ? buttonColor(k, i)
-                    : Styles.secondaryColor;
-              }),
-              shape: WidgetStateProperty.all<OutlinedBorder>(
-                  RoundedRectangleBorder(
-                borderRadius: buttonEdgeRadius(k, i),
-              )),
-              side: WidgetStateProperty.all<BorderSide>(getGridBorder(k, i)),
-              elevation: WidgetStateProperty.resolveWith<double>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.pressed)) {
-                    return 2.0;
+                  } else {
+                    // Empty cell - show number input dialog
+                    showAnimatedDialog<void>(
+                            context: context,
+                            barrierDismissible: true,
+                            duration: ANIMATION_DURATION_MEDIUM,
+                            builder: (_) => const AlertNumbersState())
+                        .whenComplete(() {
+                      callback([k, i], AlertNumbersState.number);
+                      AlertNumbersState.number = null;
+                    });
                   }
-                  if (states.contains(WidgetState.hovered)) {
-                    return 4.0;
-                  }
-                  return 1.0;
                 },
-              ),
-              shadowColor: WidgetStateProperty.all<Color>(
-                  Styles.primaryColor.withValues(alpha: 0.3)),
-            ),
+          onLongPress: isButtonDisabled || gameCopy[k][i] != 0
+              ? null
+              : () {
+                  callback([k, i], 0);
+                  setState(() {
+                    selectedNumber = null;
+                  });
+                },
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.all<Color>(Colors.transparent),
+            foregroundColor:
+                WidgetStateProperty.all<Color>(Styles.foregroundColor),
+            shape: WidgetStateProperty.all<OutlinedBorder>(
+                RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+            elevation: WidgetStateProperty.all<double>(0),
+            shadowColor: WidgetStateProperty.all<Color>(Colors.transparent),
+            overlayColor: WidgetStateProperty.all<Color>(Colors.transparent),
+            padding: WidgetStateProperty.all<EdgeInsets>(EdgeInsets.zero),
+          ),
+          child: Center(
             child: Text(
               game[k][i] != 0 ? game[k][i].toString() : ' ',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: buttonFontSize(),
                 fontWeight: FontWeight.bold,
+                color: gameCopy[k][i] != 0
+                    ? Styles.foregroundColor // Original clue numbers
+                    : Styles.primaryColor, // User-input numbers
                 letterSpacing: 0.5,
               ),
             ),
@@ -410,8 +470,10 @@ class HomePageState extends State<HomePage> {
         return;
       } else if (number == 0) {
         game[index[0]][index[1]] = number;
+        selectedNumber = null;
       } else {
         game[index[0]][index[1]] = number;
+        selectedNumber = null;
         checkResult();
       }
     });
@@ -469,15 +531,15 @@ class HomePageState extends State<HomePage> {
                   Timer(
                       ANIMATION_DURATION_MEDIUM,
                       () => showAnimatedDialog<void>(
-                          context: outerContext,
-                          barrierDismissible: true,
-                          duration: ANIMATION_DURATION_LONG,
-                          builder: (_) => AlertDifficultyState(
-                              currentDifficultyLevel!)).whenComplete(() {
+                              context: outerContext,
+                              barrierDismissible: true,
+                              duration: ANIMATION_DURATION_LONG,
+                              builder: (_) => AlertDifficultyState(
+                                  currentDifficultyLevel!)).whenComplete(() {
                             if (AlertDifficultyState.difficulty != null) {
                               Timer(ANIMATION_DURATION_MEDIUM, () {
-                                newGame(
-                                    AlertDifficultyState.difficulty ?? DEFAULT_DIFFICULTY);
+                                newGame(AlertDifficultyState.difficulty ??
+                                    DEFAULT_DIFFICULTY);
                                 currentDifficultyLevel =
                                     AlertDifficultyState.difficulty;
                                 AlertDifficultyState.difficulty = null;
@@ -507,17 +569,16 @@ class HomePageState extends State<HomePage> {
                   Timer(
                       const Duration(milliseconds: 200),
                       () => showAnimatedDialog<void>(
-                          context: outerContext,
-                          barrierDismissible: true,
-                          duration: ANIMATION_DURATION_LONG,
-                          builder: (_) => AlertAccentColorsState(
-                              currentAccentColor!)).whenComplete(() {
+                              context: outerContext,
+                              barrierDismissible: true,
+                              duration: ANIMATION_DURATION_LONG,
+                              builder: (_) => AlertAccentColorsState(
+                                  currentAccentColor!)).whenComplete(() {
                             if (AlertAccentColorsState.accentColor != null) {
                               Timer(ANIMATION_DURATION_MEDIUM, () {
                                 currentAccentColor =
                                     AlertAccentColorsState.accentColor;
-                                changeAccentColor(
-                                    currentAccentColor!);
+                                changeAccentColor(currentAccentColor!);
                                 AlertAccentColorsState.accentColor = null;
                                 setPrefs(PREF_ACCENT_COLOR);
                               });
@@ -601,41 +662,45 @@ class HomePageState extends State<HomePage> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Styles.primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 0,
-                            offset: const Offset(0, 10),
-                          ),
-                          BoxShadow(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ...createRows(),
+                        const SizedBox(height: 24),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
                             color: Styles.primaryColor.withValues(alpha: 0.1),
-                            blurRadius: 40,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          color: Styles.secondaryBackgroundColor,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: createRows(),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Styles.primaryColor.withValues(alpha: 0.3),
+                              width: 1,
                             ),
                           ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                color: Styles.primaryColor,
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                formatTime(elapsedSeconds),
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Styles.foregroundColor,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),

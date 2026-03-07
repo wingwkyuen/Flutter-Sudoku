@@ -5,8 +5,9 @@ import '../styles.dart';
 class AlertGameOver extends StatelessWidget {
   static bool newGame = false;
   static bool restartGame = false;
+  final String timeString;
 
-  const AlertGameOver({Key? key}) : super(key: key);
+  const AlertGameOver({Key? key, required this.timeString}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +15,11 @@ class AlertGameOver extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       backgroundColor: Styles.secondaryBackgroundColor,
       title: Text(
-        'Game Over',
+        'Congratulations!',
         style: TextStyle(color: Styles.foregroundColor),
       ),
       content: Text(
-        'You successfully solved the Sudoku',
+        'You successfully solved the Sudoku\nTime: $timeString',
         style: TextStyle(color: Styles.foregroundColor),
       ),
       actions: [

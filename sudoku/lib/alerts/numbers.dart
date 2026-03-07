@@ -26,67 +26,54 @@ class AlertNumbers extends State<AlertNumbersState> {
   static final List<int> numberList3 = [7, 8, 9];
 
   List<SizedBox> createButtons(List<int> numberList) {
-    // Calculate responsive button size with modern Material Design 3 spacing
     final screenWidth = MediaQuery.of(context).size.width;
-    final buttonSize = ((screenWidth * 0.65) / 3) - 12; // 3 buttons per row with spacing
-    final fontSize = (screenWidth * 0.13).clamp(22.0, 32.0);
-    
+    final buttonSize = ((screenWidth * 0.45) / 3) - 8;
+    final fontSize = (screenWidth * 0.08).clamp(16.0, 22.0);
+
     return <SizedBox>[
       for (int numbers in numberList)
         SizedBox(
           width: buttonSize,
           height: buttonSize,
-          child: TextButton(
-            onPressed: () => {
-              setState(() {
-                numberSelected = numbers;
-                number = numberSelected;
-                Navigator.pop(context);
-              })
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.hovered)) {
-                    return Styles.primaryColor.withValues(alpha: 0.1);
-                  }
-                  if (states.contains(WidgetState.pressed)) {
-                    return Styles.primaryColor.withValues(alpha: 0.2);
-                  }
-                  return Styles.secondaryBackgroundColor;
-                },
-              ),
-              foregroundColor: WidgetStateProperty.all<Color>(Styles.primaryColor),
-              shape: WidgetStateProperty.all<OutlinedBorder>(
-                  RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              )),
-              side: WidgetStateProperty.all<BorderSide>(BorderSide(
-                color: Styles.foregroundColor.withValues(alpha: 0.3),
-                width: 1.5,
-                style: BorderStyle.solid,
-              )),
-              elevation: WidgetStateProperty.resolveWith<double>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.pressed)) {
-                    return 2.0;
-                  }
-                  if (states.contains(WidgetState.hovered)) {
-                    return 4.0;
-                  }
-                  return 1.0;
-                },
-              ),
-              shadowColor: WidgetStateProperty.all<Color>(
-                  Styles.primaryColor.withValues(alpha: 0.2)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Styles.primaryBackgroundColor == Styles.darkGrey
+                  ? Colors.grey[800]
+                  : Colors.grey[300],
+              border: Border.all(color: Styles.foregroundColor, width: 1.0),
             ),
-            child: Text(
-              numbers.toString(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
+            child: TextButton(
+              onPressed: () => {
+                setState(() {
+                  numberSelected = numbers;
+                  number = numberSelected;
+                  Navigator.pop(context);
+                })
+              },
+              style: ButtonStyle(
+                backgroundColor:
+                    WidgetStateProperty.all<Color>(Colors.transparent),
+                foregroundColor:
+                    WidgetStateProperty.all<Color>(Styles.foregroundColor),
+                shape: WidgetStateProperty.all<OutlinedBorder>(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+                elevation: WidgetStateProperty.all<double>(0),
+                shadowColor: WidgetStateProperty.all<Color>(Colors.transparent),
+                overlayColor:
+                    WidgetStateProperty.all<Color>(Colors.transparent),
+                padding: WidgetStateProperty.all<EdgeInsets>(EdgeInsets.zero),
+              ),
+              child: Center(
+                child: Text(
+                  numbers.toString(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: Styles.foregroundColor,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ),
             ),
           ),
@@ -113,11 +100,11 @@ class AlertNumbers extends State<AlertNumbersState> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 8,
-      backgroundColor: Styles.secondaryBackgroundColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      elevation: 2,
+      backgroundColor: Styles.primaryBackgroundColor,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 28.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -125,20 +112,20 @@ class AlertNumbers extends State<AlertNumbersState> {
               'Choose a Number',
               style: TextStyle(
                 color: Styles.foregroundColor,
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
+                  padding: const EdgeInsets.only(bottom: 8.0),
                   child: oneRow(numberList1),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
+                  padding: const EdgeInsets.only(bottom: 8.0),
                   child: oneRow(numberList2),
                 ),
                 oneRow(numberList3),

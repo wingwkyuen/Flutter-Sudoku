@@ -53,5 +53,5 @@ const String THEME_DARK = 'dark';
 
 /// UI text
 const String APP_TITLE = 'Sudoku';
-const String APP_VERSION = '2.4.1';
-const String DEVELOPER_NAME = 'VarunS2002';
+const String APP_VERSION = '1.0.0';
+const String DEVELOPER_NAME = 'Wing WK Yuen';
