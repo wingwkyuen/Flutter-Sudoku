@@ -46,12 +46,74 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
+    // Helper to count occurrences of each number in the board
+    Map<int, int> getNumberCounts() {
+      Map<int, int> counts = {for (var i = 1; i <= 9; i++) i: 0};
+      for (var row in game) {
+        for (var val in row) {
+          if (val >= 1 && val <= 9) {
+            counts[val] = counts[val]! + 1;
+          }
+        }
+      }
+      return counts;
+    }
+
+    Widget buildNumberBar() {
+      final counts = getNumberCounts();
+      return Padding(
+        padding: const EdgeInsets.only(top: 24.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int n = 1; n <= 9; n++)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    barHighlightNumber = (barHighlightNumber == n) ? null : n;
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: barHighlightNumber == n
+                        ? Colors.blue[200]
+                        : (counts[n] == 9 ? Colors.amberAccent : Styles.primaryBackgroundColor),
+                    border: Border.all(
+                      color: barHighlightNumber == n
+                          ? Colors.blue
+                          : (counts[n] == 9 ? Colors.orange : Styles.primaryColor),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: Text(
+                      n.toString(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: barHighlightNumber == n
+                            ? Colors.blue[900]
+                            : (counts[n] == 9 ? Colors.deepOrange : Styles.primaryColor),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
   bool firstRun = true;
   bool gameOver = false;
   int timesCalled = 0;
   bool isButtonDisabled = false;
   bool isFABDisabled = false;
   int? selectedNumber;
+  int? barHighlightNumber;
   Timer? gameTimer;
   int elapsedSeconds = 0;
   late List<List<List<int>>> gameList;
@@ -371,7 +433,7 @@ class HomePageState extends State<HomePage> {
         width: buttonSize(),
         height: buttonSize(),
         decoration: BoxDecoration(
-          color: buttonColor(k, i, game, gameCopy, null, null, selectedNumber),
+          color: buttonColor(k, i, game, gameCopy, null, null, barHighlightNumber ?? selectedNumber),
           border: getGridBorder(k, i),
         ),
         child: TextButton(
@@ -667,6 +729,7 @@ class HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         ...createRows(),
+                        buildNumberBar(),
                         const SizedBox(height: 24),
                         Container(
                           padding: const EdgeInsets.symmetric(

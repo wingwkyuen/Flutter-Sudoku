@@ -7,8 +7,8 @@ const int TEST_EMPTY_SQUARES = 2;
 const int BEGINNER_EMPTY_SQUARES = 18;
 const int EASY_EMPTY_SQUARES = 27;
 const int MEDIUM_EMPTY_SQUARES = 42;
-const int HARD_EMPTY_SQUARES = 54;
-const int EXPERT_EMPTY_SQUARES = 52;
+const int HARD_EMPTY_SQUARES = 52;
+const int EXPERT_EMPTY_SQUARES = 58;
 const int MIN_EMPTY_SQUARES = 17;
 
 /// Animation durations
