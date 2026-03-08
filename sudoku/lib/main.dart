@@ -46,67 +46,115 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-    // Helper to count occurrences of each number in the board
-    Map<int, int> getNumberCounts() {
-      Map<int, int> counts = {for (var i = 1; i <= 9; i++) i: 0};
-      for (var row in game) {
-        for (var val in row) {
-          if (val >= 1 && val <= 9) {
-            counts[val] = counts[val]! + 1;
-          }
+  // Helper to count occurrences of each number in the board
+  Map<int, int> getNumberCounts() {
+    Map<int, int> counts = {for (var i = 1; i <= 9; i++) i: 0};
+    for (var row in game) {
+      for (var val in row) {
+        if (val >= 1 && val <= 9) {
+          counts[val] = counts[val]! + 1;
         }
       }
-      return counts;
     }
+    return counts;
+  }
 
-    Widget buildNumberBar() {
-      final counts = getNumberCounts();
-      return Padding(
-        padding: const EdgeInsets.only(top: 24.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (int n = 1; n <= 9; n++)
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    barHighlightNumber = (barHighlightNumber == n) ? null : n;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
+  Widget buildNumberBar() {
+    final counts = getNumberCounts();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final boxSize =
+        ((screenWidth - 32) / 9) - 8; // Responsive size with padding
+    final fontSize = (boxSize * 0.5).clamp(16.0, 20.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (int n = 1; n <= 9; n++)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  barHighlightNumber = (barHighlightNumber == n) ? null : n;
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  gradient: barHighlightNumber == n
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.blue[300]!, Colors.blue[400]!],
+                        )
+                      : (counts[n] == 9
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Colors.amber[300]!, Colors.orange[400]!],
+                            )
+                          : LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Styles.primaryBackgroundColor,
+                                Styles.primaryBackgroundColor
+                                    .withValues(alpha: 0.8)
+                              ],
+                            )),
+                  border: Border.all(
                     color: barHighlightNumber == n
-                        ? Colors.blue[200]
-                        : (counts[n] == 9 ? Colors.amberAccent : Styles.primaryBackgroundColor),
-                    border: Border.all(
-                      color: barHighlightNumber == n
-                          ? Colors.blue
-                          : (counts[n] == 9 ? Colors.orange : Styles.primaryColor),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
+                        ? Colors.blue[600]!
+                        : (counts[n] == 9
+                            ? Colors.orange[600]!
+                            : Styles.primaryColor.withValues(alpha: 0.3)),
+                    width: 1.5,
                   ),
-                  width: 36,
-                  height: 36,
-                  child: Center(
-                    child: Text(
-                      n.toString(),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: barHighlightNumber == n
-                            ? Colors.blue[900]
-                            : (counts[n] == 9 ? Colors.deepOrange : Styles.primaryColor),
-                      ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (barHighlightNumber == n
+                              ? Colors.blue
+                              : (counts[n] == 9
+                                  ? Colors.orange
+                                  : Styles.primaryColor))
+                          .withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                width: boxSize,
+                height: boxSize,
+                child: Center(
+                  child: Text(
+                    n.toString(),
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                      color: barHighlightNumber == n
+                          ? Colors.white
+                          : (counts[n] == 9
+                              ? Colors.white
+                              : Styles.primaryColor),
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          offset: const Offset(1, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
-      );
-    }
+            ),
+        ],
+      ),
+    );
+  }
+
   bool firstRun = true;
   bool gameOver = false;
   int timesCalled = 0;
@@ -116,6 +164,7 @@ class HomePageState extends State<HomePage> {
   int? barHighlightNumber;
   Timer? gameTimer;
   int elapsedSeconds = 0;
+  bool hasStartedPlaying = false;
   late List<List<List<int>>> gameList;
   late List<List<int>> game;
   late List<List<int>> gameCopy;
@@ -371,9 +420,9 @@ class HomePageState extends State<HomePage> {
             isButtonDisabled ? !isButtonDisabled : isButtonDisabled;
         gameOver = false;
         isFABDisabled = !isFABDisabled;
+        hasStartedPlaying = false;
       });
       resetTimer();
-      startTimer();
     });
   }
 
@@ -384,9 +433,9 @@ class HomePageState extends State<HomePage> {
           isButtonDisabled ? !isButtonDisabled : isButtonDisabled;
       gameOver = false;
       selectedNumber = null;
+      hasStartedPlaying = false;
     });
     resetTimer();
-    startTimer();
   }
 
   void startTimer() {
@@ -419,6 +468,96 @@ class HomePageState extends State<HomePage> {
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
+  Gradient _getCellGradient(int k, int i, List<List<int>> game,
+      List<List<int>> gameCopy, int? highlightNumber) {
+    Color baseColor =
+        buttonColor(k, i, game, gameCopy, null, null, highlightNumber);
+
+    // Highlighted cells - vibrant gradient
+    if (highlightNumber != null && game[k][i] == highlightNumber) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(255, 32, 118, 240),
+          const Color.fromARGB(255, 22, 108, 230),
+        ],
+      );
+    }
+
+    // Clue cells - subtle gradient
+    if (gameCopy[k][i] != 0) {
+      if (Styles.primaryBackgroundColor == Styles.darkGrey) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.grey[700]!,
+            Colors.grey[800]!,
+          ],
+        );
+      } else {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.grey[200]!,
+            Colors.grey[300]!,
+          ],
+        );
+      }
+    }
+
+    // User-filled or empty cells - very subtle gradient for depth
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        baseColor,
+        baseColor.withValues(alpha: baseColor.alpha * 0.85),
+      ],
+    );
+  }
+
+  List<BoxShadow> _getCellShadow(int k, int i, List<List<int>> game,
+      List<List<int>> gameCopy, int? highlightNumber) {
+    // Highlighted cells - glowing effect
+    if (highlightNumber != null && game[k][i] == highlightNumber) {
+      return [
+        BoxShadow(
+          color: Colors.blue.withValues(alpha: 0.3),
+          blurRadius: 4,
+          spreadRadius: 1,
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 2,
+          offset: const Offset(1, 1),
+        ),
+      ];
+    }
+
+    // Clue cells - subtle inset effect
+    if (gameCopy[k][i] != 0) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 1,
+          offset: const Offset(0.5, 0.5),
+        ),
+      ];
+    }
+
+    // User-filled or empty cells - very subtle shadow
+    return [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.03),
+        blurRadius: 1,
+        offset: const Offset(0.5, 0.5),
+      ),
+    ];
+  }
+
   List<Widget> createButtons() {
     if (firstRun) {
       setGame(1);
@@ -433,13 +572,21 @@ class HomePageState extends State<HomePage> {
         width: buttonSize(),
         height: buttonSize(),
         decoration: BoxDecoration(
-          color: buttonColor(k, i, game, gameCopy, null, null, barHighlightNumber ?? selectedNumber),
+          gradient: _getCellGradient(
+              k, i, game, gameCopy, barHighlightNumber ?? selectedNumber),
           border: getGridBorder(k, i),
+          boxShadow: _getCellShadow(
+              k, i, game, gameCopy, barHighlightNumber ?? selectedNumber),
         ),
         child: TextButton(
           onPressed: isButtonDisabled
               ? null
               : () {
+                  // Start timer on first action
+                  if (!hasStartedPlaying && !gameOver) {
+                    hasStartedPlaying = true;
+                    startTimer();
+                  }
                   // If it's a clue cell, only highlight matching numbers
                   if (gameCopy[k][i] != 0) {
                     setState(() {
@@ -453,7 +600,8 @@ class HomePageState extends State<HomePage> {
                             context: context,
                             barrierDismissible: true,
                             duration: ANIMATION_DURATION_MEDIUM,
-                            builder: (_) => AlertNumbersState(currentValue: game[k][i]))
+                            builder: (_) =>
+                                AlertNumbersState(currentValue: game[k][i]))
                         .whenComplete(() {
                       callback([k, i], AlertNumbersState.number);
                       AlertNumbersState.number = null;
@@ -464,7 +612,8 @@ class HomePageState extends State<HomePage> {
                             context: context,
                             barrierDismissible: true,
                             duration: ANIMATION_DURATION_MEDIUM,
-                            builder: (_) => AlertNumbersState(currentValue: game[k][i]))
+                            builder: (_) =>
+                                AlertNumbersState(currentValue: game[k][i]))
                         .whenComplete(() {
                       callback([k, i], AlertNumbersState.number);
                       AlertNumbersState.number = null;
@@ -484,7 +633,7 @@ class HomePageState extends State<HomePage> {
             foregroundColor:
                 WidgetStateProperty.all<Color>(Styles.foregroundColor),
             shape: WidgetStateProperty.all<OutlinedBorder>(
-                RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+                const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
             elevation: WidgetStateProperty.all<double>(0),
             shadowColor: WidgetStateProperty.all<Color>(Colors.transparent),
             overlayColor: WidgetStateProperty.all<Color>(Colors.transparent),
@@ -496,11 +645,18 @@ class HomePageState extends State<HomePage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: buttonFontSize(),
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 color: gameCopy[k][i] != 0
                     ? Styles.foregroundColor // Original clue numbers
                     : Styles.primaryColor, // User-input numbers
-                letterSpacing: 0.5,
+                letterSpacing: 1.2,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    offset: const Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
             ),
           ),

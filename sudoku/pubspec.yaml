@@ -67,6 +67,9 @@ dev_dependencies:
   # Native Splashscreen
   flutter_native_splash: ^2.2.3+1
 
+  # Launcher Icons
+  flutter_launcher_icons: ^0.13.1
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -112,3 +115,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+# Launcher Icons Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon_square.png"
+  remove_alpha_ios: true

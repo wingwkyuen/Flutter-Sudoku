@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "VarunS2002" "\0"
+            VALUE "CompanyName", "tcgoidc" "\0"
             VALUE "FileDescription", "A fully fledged Sudoku game." "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "sudoku" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2022 VarunS2002. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2022 tcgoidc. All rights reserved." "\0"
             VALUE "OriginalFilename", "sudoku.exe" "\0"
             VALUE "ProductName", "Sudoku" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

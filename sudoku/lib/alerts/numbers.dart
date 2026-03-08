@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../styles.dart';
 
-
 class AlertNumbersState extends StatefulWidget {
   final int? currentValue;
   const AlertNumbersState({Key? key, this.currentValue}) : super(key: key);
@@ -29,8 +28,9 @@ class AlertNumbers extends State<AlertNumbersState> {
 
   List<SizedBox> createButtons(List<int> numberList) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final buttonSize = ((screenWidth * 0.45) / 3) - 8;
-    final fontSize = (screenWidth * 0.08).clamp(16.0, 22.0);
+    final dialogWidth = (screenWidth * 0.75).clamp(260.0, 360.0);
+    final buttonSize = ((dialogWidth - 48) / 3) - 8;
+    final fontSize = (buttonSize * 0.35).clamp(16.0, 24.0);
 
     return <SizedBox>[
       for (int numbers in numberList)
@@ -38,13 +38,43 @@ class AlertNumbers extends State<AlertNumbersState> {
           width: buttonSize,
           height: buttonSize,
           child: Container(
+            margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: widget.currentValue == numbers
-                  ? Colors.amberAccent // Highlight color
-                  : (Styles.primaryBackgroundColor == Styles.darkGrey
-                      ? Colors.grey[800]
-                      : Colors.grey[300]),
-              border: Border.all(color: Styles.foregroundColor, width: 1.0),
+              gradient: widget.currentValue == numbers
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.amber[300]!, Colors.orange[400]!],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Styles.primaryBackgroundColor == Styles.darkGrey
+                            ? Colors.grey[700]!
+                            : Colors.grey[200]!,
+                        Styles.primaryBackgroundColor == Styles.darkGrey
+                            ? Colors.grey[800]!
+                            : Colors.grey[300]!,
+                      ],
+                    ),
+              border: Border.all(
+                color: widget.currentValue == numbers
+                    ? Colors.orange[600]!
+                    : Styles.foregroundColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: (widget.currentValue == numbers
+                          ? Colors.orange
+                          : Styles.foregroundColor)
+                      .withValues(alpha: 0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: TextButton(
               onPressed: () {
@@ -66,7 +96,8 @@ class AlertNumbers extends State<AlertNumbersState> {
                 foregroundColor:
                     WidgetStateProperty.all<Color>(Styles.foregroundColor),
                 shape: WidgetStateProperty.all<OutlinedBorder>(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+                    RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
                 elevation: WidgetStateProperty.all<double>(0),
                 shadowColor: WidgetStateProperty.all<Color>(Colors.transparent),
                 overlayColor:
@@ -79,9 +110,18 @@ class AlertNumbers extends State<AlertNumbersState> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
-                    color: Styles.foregroundColor,
-                    letterSpacing: 0.3,
+                    fontWeight: FontWeight.w900,
+                    color: widget.currentValue == numbers
+                        ? Colors.white
+                        : Styles.foregroundColor,
+                    letterSpacing: 1.2,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        offset: const Offset(1, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -109,12 +149,16 @@ class AlertNumbers extends State<AlertNumbersState> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth * 0.75).clamp(260.0, 360.0);
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
       backgroundColor: Styles.primaryBackgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
+      child: Container(
+        width: dialogWidth,
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -122,12 +166,12 @@ class AlertNumbers extends State<AlertNumbersState> {
               'Choose a Number',
               style: TextStyle(
                 color: Styles.foregroundColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Column(
               children: [
                 Padding(

@@ -38,15 +38,15 @@ double buttonSize() {
       .width;
 
   // Calculate responsive button size with better spacing
-  // 9 buttons per row + spacing = roughly 65% of screen width for modern appearance
-  double responsiveSize = (screenWidth * 0.65) / 9;
+  // 9 buttons per row + spacing = roughly 90% of screen width for modern appearance
+  double responsiveSize = (screenWidth * 0.90) / 9;
 
   // Use minimum and maximum sizes for consistency with modern Material Design 3
   if (HomePageState.platform.contains(PLATFORM_ANDROID) ||
       HomePageState.platform.contains(PLATFORM_IOS)) {
-    return responsiveSize.clamp(34.0, 52.0);
+    return responsiveSize.clamp(34.0, 75.0);
   }
-  return responsiveSize.clamp(42.0, 68.0);
+  return responsiveSize.clamp(42.0, 80.0);
 }
 
 double buttonFontSize() {
@@ -64,9 +64,9 @@ BorderRadiusGeometry buttonEdgeRadius(int k, int i) {
 // Grid border with thicker lines for 3x3 sections and outer edge (theme-aware)
 Border getGridBorder(int k, int i) {
   final color = Styles.foregroundColor;
-  const normalWidth = 1.0;
-  const thickWidth = 2.5;
-  const outerWidth = 5.0; // Match the combined thickness of cross borders
+  const normalWidth = 0.5;
+  const thickWidth = 1.0;
+  const outerWidth = 2.0; // Match the combined thickness of cross borders
 
   // Determine which borders should be thick
   final topThick = (k == 0 || k == 3 || k == 6);
