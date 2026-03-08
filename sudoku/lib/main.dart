@@ -391,7 +391,7 @@ class HomePageState extends State<HomePage> {
                             context: context,
                             barrierDismissible: true,
                             duration: ANIMATION_DURATION_MEDIUM,
-                            builder: (_) => const AlertNumbersState())
+                            builder: (_) => AlertNumbersState(currentValue: game[k][i]))
                         .whenComplete(() {
                       callback([k, i], AlertNumbersState.number);
                       AlertNumbersState.number = null;
@@ -402,7 +402,7 @@ class HomePageState extends State<HomePage> {
                             context: context,
                             barrierDismissible: true,
                             duration: ANIMATION_DURATION_MEDIUM,
-                            builder: (_) => const AlertNumbersState())
+                            builder: (_) => AlertNumbersState(currentValue: game[k][i]))
                         .whenComplete(() {
                       callback([k, i], AlertNumbersState.number);
                       AlertNumbersState.number = null;

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../styles.dart';
 
+
 class AlertNumbersState extends StatefulWidget {
-  const AlertNumbersState({Key? key}) : super(key: key);
+  final int? currentValue;
+  const AlertNumbersState({Key? key, this.currentValue}) : super(key: key);
 
   @override
   AlertNumbers createState() => AlertNumbers();
@@ -37,18 +39,26 @@ class AlertNumbers extends State<AlertNumbersState> {
           height: buttonSize,
           child: Container(
             decoration: BoxDecoration(
-              color: Styles.primaryBackgroundColor == Styles.darkGrey
-                  ? Colors.grey[800]
-                  : Colors.grey[300],
+              color: widget.currentValue == numbers
+                  ? Colors.amberAccent // Highlight color
+                  : (Styles.primaryBackgroundColor == Styles.darkGrey
+                      ? Colors.grey[800]
+                      : Colors.grey[300]),
               border: Border.all(color: Styles.foregroundColor, width: 1.0),
             ),
             child: TextButton(
-              onPressed: () => {
+              onPressed: () {
                 setState(() {
-                  numberSelected = numbers;
-                  number = numberSelected;
+                  if (widget.currentValue == numbers) {
+                    // If clicking the highlighted (already filled) number, remove it
+                    numberSelected = 0;
+                    number = 0;
+                  } else {
+                    numberSelected = numbers;
+                    number = numberSelected;
+                  }
                   Navigator.pop(context);
-                })
+                });
               },
               style: ButtonStyle(
                 backgroundColor:
